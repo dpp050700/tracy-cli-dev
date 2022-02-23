@@ -1,3 +1,3 @@
-#! /usr/local/bin/env node
+#!/usr/bin/env node
 
-console.log('hello tracy-cli-dev')
+console.log('hello tracy-cli-dev ~~~')
