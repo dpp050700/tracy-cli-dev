@@ -9,3 +9,4 @@
    lerna exec --scope package-name(包名) -- 在每个 package 中执行 例： lerna exec --scope @tracy-cli-dev/core -- rm -rf node_modules
 8. lerna run 在每个包下面执行 npm 脚本 例：lerna run build
    lerna run --scope 在指定包下面执行 npm 脚本 例：lerna run --scope @tracy-cli-dev/core build
+9. lerna diff
