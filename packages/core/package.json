@@ -22,5 +22,8 @@
   "dependencies": {
     "@tracy-cli-dev/utils": "^1.0.1"
   },
-  "gitHead": "5536b9c8a12ce78090084f939b2ba4ba506841e0"
+  "gitHead": "5536b9c8a12ce78090084f939b2ba4ba506841e0",
+  "publishConfig": {
+    "access": "public"
+  }
 }
