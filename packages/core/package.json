@@ -1,6 +1,6 @@
 {
   "name": "@tracy-cli-dev/core",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "> TODO: description",
   "author": "tracy-cli-dev",
   "homepage": "",
@@ -20,7 +20,7 @@
     "test": "echo \"Error: run tests from core\" "
   },
   "dependencies": {
-    "@tracy-cli-dev/utils": "^1.0.1"
+    "@tracy-cli-dev/utils": "^1.0.2"
   },
   "gitHead": "5536b9c8a12ce78090084f939b2ba4ba506841e0",
   "publishConfig": {
