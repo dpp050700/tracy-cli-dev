@@ -13,7 +13,7 @@ const constant = require('./const')
 
 let args
 
-function core() {
+async function core() {
     try {
         checkPkgVersion()
         checkNodeVersion() // 检查 node 版本
@@ -21,18 +21,19 @@ function core() {
         checkUserHome()
         checkInputArgs()
         checkEnv() // 检查环境变量
-        checkGlobalUpdate()
+        await checkGlobalUpdate()
     } catch (error) {
         log.error(error.message)
     }
 }
 
-function checkGlobalUpdate() {
+async function checkGlobalUpdate() {
     const currentVersion = pkg.version
     const npmName = pkg.name
 
     const { getNpmInfo } = require('@tracy-cli-dev/get-npm-info')
-    getNpmInfo(npmName)
+    const data = await getNpmInfo(npmName)
+    console.log(data)
 }
 
 function checkNodeVersion() {

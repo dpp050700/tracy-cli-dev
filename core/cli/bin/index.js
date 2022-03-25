@@ -1,8 +1,5 @@
 #!/usr/bin/env node
-// const utils = require('@tracy-cli-dev/utils')
 
-// utils()
-// console.log('hello tracy-cli-dev ~~~ 2222')
 const importLocal = require('import-local')
 
 if (importLocal(__filename)) {
