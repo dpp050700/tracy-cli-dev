@@ -1,0 +1,26 @@
+{
+  "name": "get-npm-info",
+  "version": "1.0.4",
+  "description": "get npm info",
+  "author": "戴鹏鹏 <pengpeng.dai@china.zhaogang.com>",
+  "homepage": "https://github.com/dpp050700/tracy-cli-dev#readme",
+  "license": "ISC",
+  "main": "lib/index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dpp050700/tracy-cli-dev.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
+  "bugs": {
+    "url": "https://github.com/dpp050700/tracy-cli-dev/issues"
+  }
+}
