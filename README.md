@@ -10,3 +10,6 @@
 8. lerna run 在每个包下面执行 npm 脚本 例：lerna run build
    lerna run --scope 在指定包下面执行 npm 脚本 例：lerna run --scope @tracy-cli-dev/core build
 9. lerna diff
+
+// npm link --force 强制 link
+// 一定要 #!/usr/bin/env node

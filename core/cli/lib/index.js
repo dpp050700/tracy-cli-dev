@@ -7,11 +7,15 @@ const semver = require('semver')
 const colors = require('colors/safe')
 const userHome = require('user-home')
 const pathExists = require('path-exists').sync
+const commander = require('commander')
 const log = require('@tracy-cli-dev/log')
+const init = require('@tracy-cli-dev/init')
 const pkg = require('../package.json')
 const constant = require('./const')
 
 let args
+
+const program = new commander.Command()
 
 async function core() {
     try {
@@ -19,9 +23,10 @@ async function core() {
         checkNodeVersion() // 检查 node 版本
         checkRoot() // 检查是否 root 用户
         checkUserHome()
-        checkInputArgs()
+        // checkInputArgs()
         checkEnv() // 检查环境变量
         await checkGlobalUpdate()
+        registerCommand()
     } catch (error) {
         log.error(error.message)
     }
@@ -31,9 +36,11 @@ async function checkGlobalUpdate() {
     const currentVersion = pkg.version
     const npmName = pkg.name
 
-    const { getNpmInfo } = require('@tracy-cli-dev/get-npm-info')
-    const data = await getNpmInfo(npmName)
-    console.log(data)
+    const { getNpmSemverVersion } = require('@tracy-cli-dev/get-npm-info')
+    const lastVersion = await getNpmSemverVersion(currentVersion, npmName)
+    if (lastVersion && semver.gt(lastVersion, currentVersion)) {
+        log.warn(colors.yellow(`请手动更新 ${npmName}， 当前版本号：${currentVersion}，最新版本号：${lastVersion}`))
+    }
 }
 
 function checkNodeVersion() {
@@ -97,4 +104,43 @@ function createDefaultConfig() {
     }
     process.env.CLI_HOME_PATH = cliConfig.cliHome
     return cliConfig
+}
+
+function registerCommand() {
+    program
+        .name(Object.keys(pkg.bin)[0])
+        .usage('<command> [options]')
+        .version(pkg.version)
+        .option('-d, --debug', '是否开始调试模式', false)
+    
+    program
+        .command('init [projectName]')
+        .option('-f, --force', '是否强制初始化项目')
+        .action(init)
+    
+    // 开启debug
+    program.on('option:debug', function () {
+        if (program.opts().debug) {
+            process.env.LOG_LEVEL = 'verbose'
+        } else {
+            process.env.LOG_LEVEL = 'info'
+        }
+        log.level = process.env.LOG_LEVEL
+        log.verbose('test')
+    })
+
+    // 未知命令监听
+    program.on('command:*', function (obj) {
+        const availableCommands = program.commands.map(cmd => cmd.name)
+        console.log(colors.red('未知的命令：' + obj[0]))
+        if (availableCommands.length > 0) {
+            console.log(colors.red('可用命令：' + availableCommands.join(',')))
+        }
+    })
+
+    program.parse(process.argv)
+
+    if (program.args && program.args.length < 1) {
+        program.outputHelp()
+    }
 }
