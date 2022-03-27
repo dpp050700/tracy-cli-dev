@@ -23,6 +23,7 @@
     "@tracy-cli-dev/get-npm-info": "file:../../utils/get-npm-info",
     "@tracy-cli-dev/log": "file:../../utils/log",
     "@tracy-cli-dev/init": "file:../../commands/init",
+    "@tracy-cli-dev/exec": "file:../exec",
     "colors": "^1.4.0",
     "commander": "^9.1.0",
     "dotenv": "^16.0.0",

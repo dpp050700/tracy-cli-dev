@@ -8,8 +8,11 @@ const colors = require('colors/safe')
 const userHome = require('user-home')
 const pathExists = require('path-exists').sync
 const commander = require('commander')
+
 const log = require('@tracy-cli-dev/log')
 const init = require('@tracy-cli-dev/init')
+const exec = require('@tracy-cli-dev/exec')
+
 const pkg = require('../package.json')
 const constant = require('./const')
 
@@ -25,7 +28,7 @@ async function core() {
         checkUserHome()
         // checkInputArgs()
         checkEnv() // 检查环境变量
-        await checkGlobalUpdate()
+        // await checkGlobalUpdate()
         registerCommand()
     } catch (error) {
         log.error(error.message)
@@ -106,17 +109,27 @@ function createDefaultConfig() {
     return cliConfig
 }
 
+function mergeOptions(func) {
+    return function (...args) {
+        func({
+            commandOptions: args,
+            globalOptions: program.opts(),
+        })
+    }
+}
+
 function registerCommand() {
     program
         .name(Object.keys(pkg.bin)[0])
         .usage('<command> [options]')
         .version(pkg.version)
         .option('-d, --debug', '是否开始调试模式', false)
+        .option('-tp, --targetPath <targetPath>', '是否指定本地调试文件路径', '')
     
     program
         .command('init [projectName]')
-        .option('-f, --force', '是否强制初始化项目')
-        .action(init)
+        .option('-f, --force', '是否强制初始化项目', false)
+        .action(exec)
     
     // 开启debug
     program.on('option:debug', function () {
@@ -127,6 +140,12 @@ function registerCommand() {
         }
         log.level = process.env.LOG_LEVEL
         log.verbose('test')
+    })
+
+    // 监听 targetPath
+    program.on('option:targetPath', function () {
+        const { targetPath } = program.opts() || {}
+        process.env.CLI_TARGET_PATH = targetPath
     })
 
     // 未知命令监听

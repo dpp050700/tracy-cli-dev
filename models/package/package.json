@@ -1,7 +1,7 @@
 {
-  "name": "@tracy-cli-dev/get-npm-info",
+  "name": "@tracy-cli-dev/package",
   "version": "1.0.4",
-  "description": "get npm info",
+  "description": "> TODO: description",
   "author": "戴鹏鹏 <pengpeng.dai@china.zhaogang.com>",
   "homepage": "https://github.com/dpp050700/tracy-cli-dev#readme",
   "license": "ISC",
@@ -13,6 +13,9 @@
   "files": [
     "lib"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dpp050700/tracy-cli-dev.git"
@@ -24,8 +27,11 @@
     "url": "https://github.com/dpp050700/tracy-cli-dev/issues"
   },
   "dependencies": {
-    "axios": "^0.26.1",
-    "semver": "^7.3.5",
-    "url-join": "^4.0.0"
+    "@tracy-cli-dev/format-path": "file:../../utils/format-path",
+    "@tracy-cli-dev/log": "file:../../utils/log",
+    "@tracy-cli-dev/utils": "file:../../utils/utils",
+    "@tracy-cli-dev/get-npm-info": "file:../../utils/get-npm-info",
+    "npminstall": "^6.1.0",
+    "pkg-dir": "^5.0.0"
   }
 }
