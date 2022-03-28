@@ -24,6 +24,7 @@ async function exec() {
     const packageName = SETTINGS[cmdName]
     const packageVersion = 'latest'
 
+
     if (!targetPath) {
         targetPath = path.resolve(homePath,CACHE_DIR)
         storePath = path.resolve(homePath, 'node_modules')
@@ -34,8 +35,9 @@ async function exec() {
             packageName,
             packageVersion
         })
-        if (pkg.exits()) {
+        if (await pkg.exits()) {
             // 更新 package
+            await pkg.update()
         } else {
             // 安装 package
             await pkg.install();
@@ -52,9 +54,6 @@ async function exec() {
     if (rootFile) {
         require(rootFile)(...arguments) // require(rootFile).apply(null,...arguments)
     }
-
-    
-    // console.log(pkg.getRootFilePath())
 }
 
 module.exports = exec;

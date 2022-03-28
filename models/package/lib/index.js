@@ -3,11 +3,12 @@
 const path = require('path')
 const pkgDir = require('pkg-dir').sync
 const npminstall = require('npminstall')
-// const userHome = require('user')
+const pathExists = require('path-exists').sync
+const fsExtra = require('fs-extra')
 
 const { isObject } = require('@tracy-cli-dev/utils')
 const formatPath = require('@tracy-cli-dev/format-path')
-const { getDefaultRegistry } = require('@tracy-cli-dev/get-npm-info')
+const { getDefaultRegistry, getNpmLatestVersion } = require('@tracy-cli-dev/get-npm-info')
 
 class Package {
     constructor(options) {
@@ -25,9 +26,34 @@ class Package {
         this.packageName = options.packageName
         // package 的 version
         this.packageVersion = options.packageVersion
+        // package 的缓存目录前缀
+        this.cacheFilePathPrefix = this.packageName.replace('/', '_')
+    }
+    async prepare() {
+        if (this.storePath && !pathExists(this.storePath)) {
+            fsExtra.mkdirpSync(this.storePath) // 如果目录不存在创建目录
+        }
+
+        if (this.packageVersion === 'latest') {
+            this.packageVersion = await getNpmLatestVersion(this.packageName)
+        }
+    }
+
+    get cacheFilePath() {
+        return this.getSpecificCacheFilePath(this.packageVersion)
+        // return path.resolve(this.storePath, `_${this.cacheFilePathPrefix}@${this.packageVersion}@${this.packageName}`)
+    }
+    getSpecificCacheFilePath(packageVersion) {
+        return path.resolve(this.storePath, `_${this.cacheFilePathPrefix}@${packageVersion}@${this.packageName}`)
     }
     // 判断是否存在
-    exits() {
+    async exits() {
+        if (this.storePath) {
+            await this.prepare()
+            return pathExists(this.cacheFilePath)
+        } else {
+            return pathExists(this.targetPath)
+        }
         
     }
     // 安装
@@ -42,7 +68,21 @@ class Package {
         })
     }
     // 更新
-    update() { }
+    async update() {
+        await this.prepare()
+        const latestPackageVersion = await getNpmLatestVersion(this.packageName)
+        const latestFilePath = this.getSpecificCacheFilePath(latestPackageVersion)
+        if (!pathExists(latestFilePath)) {
+            npminstall({
+                root: this.targetPath,
+                storeDir: this.storePath,
+                registry: getDefaultRegistry(),
+                pkgs: [
+                    {name: this.packageName, version: latestPackageVersion}
+                ]
+            })
+        }
+    }
 
     //获取入口文件
     getRootFilePath() {
