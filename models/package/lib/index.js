@@ -73,7 +73,7 @@ class Package {
         const latestPackageVersion = await getNpmLatestVersion(this.packageName)
         const latestFilePath = this.getSpecificCacheFilePath(latestPackageVersion)
         if (!pathExists(latestFilePath)) {
-            npminstall({
+            await npminstall({
                 root: this.targetPath,
                 storeDir: this.storePath,
                 registry: getDefaultRegistry(),
@@ -81,25 +81,34 @@ class Package {
                     {name: this.packageName, version: latestPackageVersion}
                 ]
             })
+            this.packageVersion = latestPackageVersion
         }
     }
 
     //获取入口文件
     getRootFilePath() {
-        // 获取 package.json 所在目录 pkg-dir
-        const dir = pkgDir(this.targetPath)
-        if (dir) {
-            // 读取 package.json
-            const pkgFile = require(path.resolve(dir, 'package.json'))
-            // main/lib
-            const entryPath = pkgFile.main || pkgFile.lib
 
-            // 路径的兼容 （macos/windows）
-            if (pkgFile && entryPath) {
-                return formatPath(path.resolve(dir, entryPath))
+        function _getRootFile(targetPath) {
+            // 获取 package.json 所在目录 pkg-dir
+            const dir = pkgDir(targetPath)
+            if (dir) {
+                // 读取 package.json
+                const pkgFile = require(path.resolve(dir, 'package.json'))
+                // main/lib
+                const entryPath = pkgFile.main || pkgFile.lib
+                // 路径的兼容 （macos/windows）
+                if (pkgFile && entryPath) {
+                    return formatPath(path.resolve(dir, entryPath))
+                }
             }
+            return null
         }
-        return null
+
+        if (this.storePath) {
+            return _getRootFile(this.cacheFilePath)
+        } else {
+            return _getRootFile(this.targetPath)
+        }
     }
 }
 

@@ -28,7 +28,7 @@ async function core() {
         checkUserHome()
         // checkInputArgs()
         checkEnv() // 检查环境变量
-        // await checkGlobalUpdate()
+        await checkGlobalUpdate()
         registerCommand()
     } catch (error) {
         log.error(error.message)

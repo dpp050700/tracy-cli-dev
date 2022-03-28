@@ -6,7 +6,7 @@ const Package = require('@tracy-cli-dev/package')
 const log = require('@tracy-cli-dev/log')
 
 const SETTINGS = {
-    init: '@imooc-cli/init'
+    init: '@tracy-cli-dev/init'
 }
 
 const CACHE_DIR = 'dependencies'
