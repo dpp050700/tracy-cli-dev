@@ -1,7 +1,7 @@
 {
-  "name": "@tracy-cli-dev/init",
+  "name": "@tracy-cli-dev/command",
   "version": "1.0.4",
-  "description": "init",
+  "description": "> TODO: description",
   "author": "戴鹏鹏 <pengpeng.dai@china.zhaogang.com>",
   "homepage": "https://github.com/dpp050700/tracy-cli-dev#readme",
   "license": "ISC",
@@ -27,6 +27,7 @@
     "url": "https://github.com/dpp050700/tracy-cli-dev/issues"
   },
   "dependencies": {
-    "@tracy-cli-dev/command": "file:../../models/command"
+    "colors": "^1.4.0",
+    "semver": "^7.3.5"
   }
 }

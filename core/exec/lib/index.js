@@ -1,59 +1,57 @@
-'use strict';
+const path = require('path');
 
-const path = require('path')
-
-const Package = require('@tracy-cli-dev/package')
-const log = require('@tracy-cli-dev/log')
+const Package = require('@tracy-cli-dev/package');
+const log = require('@tracy-cli-dev/log');
 
 const SETTINGS = {
-    init: '@tracy-cli-dev/init'
-}
+  init: '@tracy-cli-dev/init',
+};
 
-const CACHE_DIR = 'dependencies'
+const CACHE_DIR = 'dependencies';
 
-async function exec() {
-    let targetPath = process.env.CLI_TARGET_PATH
-    const homePath = process.env.CLI_HOME_PATH
-    let storePath = ''
-    let pkg = null
-    log.verbose('targetPath', targetPath)
-    log.verbose('homePath', homePath)
+async function exec(...argv) {
+  let targetPath = process.env.CLI_TARGET_PATH;
+  const homePath = process.env.CLI_HOME_PATH;
+  let storePath = '';
+  let pkg = null;
+  log.verbose('targetPath', targetPath);
+  log.verbose('homePath', homePath);
 
-    const cmdObj = arguments[arguments.length - 1]
-    const cmdName = cmdObj.name()
-    const packageName = SETTINGS[cmdName]
-    const packageVersion = 'latest'
+  const cmdObj = argv[argv.length - 1];
+  const cmdName = cmdObj.name();
+  const packageName = SETTINGS[cmdName];
+  const packageVersion = 'latest';
 
+  if (!targetPath) {
+    targetPath = path.resolve(homePath, CACHE_DIR);
+    storePath = path.resolve(homePath, 'node_modules');
 
-    if (!targetPath) {
-        targetPath = path.resolve(homePath,CACHE_DIR)
-        storePath = path.resolve(homePath, 'node_modules')
-        
-        pkg = new Package({
-            targetPath,
-            storePath,
-            packageName,
-            packageVersion
-        })
-        if (await pkg.exits()) {
-            // 更新 package
-            await pkg.update()
-        } else {
-            // 安装 package
-            await pkg.install();
-        }
+    pkg = new Package({
+      targetPath,
+      storePath,
+      packageName,
+      packageVersion,
+    });
+    if (await pkg.exits()) {
+      // 更新 package
+      await pkg.update();
     } else {
-        pkg = new Package({
-            targetPath,
-            storePath,
-            packageName,
-            packageVersion
-        })
+      // 安装 package
+      await pkg.install();
     }
-    const rootFile = pkg.getRootFilePath()
-    if (rootFile) {
-        require(rootFile)(...arguments) // require(rootFile).apply(null,...arguments)
-    }
+  } else {
+    pkg = new Package({
+      targetPath,
+      storePath,
+      packageName,
+      packageVersion,
+    });
+  }
+  const rootFile = pkg.getRootFilePath();
+  if (rootFile) {
+    // eslint-disable-next-line import/no-dynamic-require
+    require(rootFile)(...argv); // require(rootFile).apply(null,...arguments)
+  }
 }
 
 module.exports = exec;
