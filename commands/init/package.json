@@ -27,6 +27,7 @@
     "url": "https://github.com/dpp050700/tracy-cli-dev/issues"
   },
   "dependencies": {
-    "@tracy-cli-dev/command": "file:../../models/command"
+    "@tracy-cli-dev/command": "file:../../models/command",
+    "npmlog": "^6.0.1"
   }
 }
