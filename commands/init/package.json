@@ -28,6 +28,8 @@
   },
   "dependencies": {
     "@tracy-cli-dev/command": "file:../../models/command",
-    "npmlog": "^6.0.1"
+    "fs-extra": "^10.0.1",
+    "inquirer": "^8.2.2",
+    "@tracy-cli-dev/log": "file:../../utils/log"
   }
 }
