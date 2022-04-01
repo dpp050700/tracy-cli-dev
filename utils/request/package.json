@@ -1,7 +1,7 @@
 {
-  "name": "@tracy-cli-dev/init",
+  "name": "@tracy-cli-dev/request",
   "version": "1.0.4",
-  "description": "init",
+  "description": "> TODO: description",
   "author": "戴鹏鹏 <pengpeng.dai@china.zhaogang.com>",
   "homepage": "https://github.com/dpp050700/tracy-cli-dev#readme",
   "license": "ISC",
@@ -27,11 +27,6 @@
     "url": "https://github.com/dpp050700/tracy-cli-dev/issues"
   },
   "dependencies": {
-    "@tracy-cli-dev/command": "file:../../models/command",
-    "@tracy-cli-dev/log": "file:../../utils/log",
-    "@tracy-cli-dev/request": "file:../../utils/request",
-    "fs-extra": "^10.0.1",
-    "inquirer": "^8.2.2",
-    "semver": "^7.3.5"
+    "axios": "^0.26.1"
   }
 }

@@ -1,9 +1,12 @@
 const fs = require('fs');
 const inquirer = require('inquirer');
 const fse = require('fs-extra');
+const semver = require('semver');
 
 const log = require('@tracy-cli-dev/log');
 const Command = require('@tracy-cli-dev/command');
+
+const getProjectTemplate = require('./getProjectTemplate');
 
 const TYPE_PROJECT = 'project';
 const TYPE_COMPONENT = 'component';
@@ -25,8 +28,19 @@ class InitCommand extends Command {
     return fileList.length === 0;
   }
 
+  createTemplateChoice() {
+    return this.template.map((item) => ({
+      value: item.npmName,
+      name: item.name,
+    }));
+  }
+
   async getProjectInfo() {
     let projectInfo = {};
+
+    function validProjectName(v) {
+      return /^[a-zA-Z]+([-][a-zA-Z][a-zA-Z0-9]*|[_][a-zA-Z][a-zA-Z0-9]*|[a-zA-Z0-9])*$/.test(v);
+    }
 
     const { type } = await inquirer.prompt({
       type: 'list',
@@ -40,25 +54,74 @@ class InitCommand extends Command {
     });
     log.verbose(type);
     if (type === TYPE_PROJECT) {
-      projectInfo = await inquirer.prompt(
+      const project = await inquirer.prompt(
         [
           {
-            type: 'input', name: 'projectName', message: '请输入项目的名称', validate() { return true; },
+            type: 'input',
+            name: 'projectName',
+            message: '请输入项目的名称',
+            default: '',
+            validate(v) {
+              const done = this.async();
+              setTimeout(() => {
+                if (!validProjectName(v)) {
+                  done('项目名称格式不正确');
+                  return;
+                }
+                done(null, true);
+              }, 0);
+            },
           },
           {
-            type: 'input', name: 'projectVersion', message: '请输入项目的版本号', validate() { return true; },
+            type: 'input',
+            name: 'projectVersion',
+            message: '请输入项目的版本号',
+            default: '1.0.0',
+            validate(v) {
+              const done = this.async();
+              setTimeout(() => {
+                if (!semver.valid(v)) {
+                  done('请输入合法的版本号');
+                  return;
+                }
+                done(null, true);
+              }, 0);
+            },
+            filter(v) {
+              if (semver.valid(v)) {
+                return semver.valid(v);
+              }
+              return v;
+            },
+          },
+          {
+            type: 'list',
+            name: 'projectTemplate',
+            message: '请选择项目模板',
+            choices: this.createTemplateChoice(),
           },
         ],
       );
+      projectInfo = { type, ...project };
     } else {
       projectInfo = {};
     }
-    console.log(projectInfo);
     return projectInfo;
   }
 
+  async downloadTemplate() {
+    // const res = await getProjectTemplate();
+    // console.log(res);
+  }
+
   async prepare() {
+    const template = await getProjectTemplate();
+    if (!template || template.length === 0) {
+      throw new Error('项目模板不存在');
+    }
+    this.template = template;
     const localPath = process.cwd();
+
     // 判断当前目录是否为空
     if (!this.isDirEmpty(localPath)) {
       if (!this.force) {
@@ -69,10 +132,9 @@ class InitCommand extends Command {
             message: '当前文件夹不为空，是否继续创建项目？',
             default: false,
           },
-          /* Pass your questions in here */
         ]);
         if (!ifContinue) {
-          return;
+          return null;
         }
       }
 
@@ -85,17 +147,20 @@ class InitCommand extends Command {
         },
       ]);
 
-      if (confirmDelete) {
-        fse.emptyDirSync(localPath);
+      if (!confirmDelete) {
+        return null;
       }
+
+      fse.emptyDirSync(localPath);
     }
-    Promise.resolve(this.getProjectInfo());
-    // return this.getProjectInfo();
+    return this.getProjectInfo();
   }
 
   async exec() {
     try {
-      await this.prepare();
+      const res = await this.prepare();
+      log.verbose(res);
+      this.downloadTemplate();
     } catch (error) {
       log.error(error.message);
     }
