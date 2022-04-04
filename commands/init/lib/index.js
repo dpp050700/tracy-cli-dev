@@ -1,16 +1,22 @@
 const fs = require('fs');
+const path = require('path');
 const inquirer = require('inquirer');
 const fse = require('fs-extra');
 const semver = require('semver');
+const userHome = require('user-home');
 
 const log = require('@tracy-cli-dev/log');
 const Command = require('@tracy-cli-dev/command');
+const Package = require('@tracy-cli-dev/package');
+const { spinnerStart } = require('@tracy-cli-dev/utils');
 
 const getProjectTemplate = require('./getProjectTemplate');
 
 const TYPE_PROJECT = 'project';
 const TYPE_COMPONENT = 'component';
 
+const TEMPLATE_TYPE_NORMAL = 'normal';
+const TEMPLATE_TYPE_CUSTOM = 'custom';
 class InitCommand extends Command {
   init() {
     this.projectName = this.argv[0];
@@ -110,8 +116,45 @@ class InitCommand extends Command {
   }
 
   async downloadTemplate() {
-    // const res = await getProjectTemplate();
-    // console.log(res);
+    const { projectTemplate } = this.projectInfo;
+    const templateInfo = this.template.find((item) => item.npmName === projectTemplate);
+    const targetPath = path.resolve(userHome, '.tracy-cli-dev', 'template');
+    const storePath = path.resolve(userHome, '.tracy-cli-dev', 'template', 'node_modules');
+    const { npmName, version } = templateInfo;
+    this.templateInfo = templateInfo;
+    const templateNpm = new Package({
+      targetPath,
+      storePath,
+      packageName: npmName,
+      packageVersion: version,
+    });
+    if (!await templateNpm.exits()) {
+      const spinner = spinnerStart('正在下载模板...');
+      try {
+        await templateNpm.install();
+      } catch (error) {
+        throw new Error(error);
+      } finally {
+        spinner.stop(true);
+        if (await templateNpm.exits()) {
+          log.success('模板下载成功');
+          this.templateNpm = templateNpm;
+        }
+      }
+    } else {
+      const spinner = spinnerStart('正在更新模板...');
+      try {
+        await templateNpm.update();
+      } catch (error) {
+        throw new Error(error);
+      } finally {
+        spinner.stop(true);
+        if (await templateNpm.exits()) {
+          log.success('模板更新成功');
+          this.templateNpm = templateNpm;
+        }
+      }
+    }
   }
 
   async prepare() {
@@ -156,11 +199,54 @@ class InitCommand extends Command {
     return this.getProjectInfo();
   }
 
+  async installNormalTemplate() {
+    const spinner = spinnerStart('正在安装模板...');
+    try {
+      const templatePath = path.resolve(this.templateNpm.cacheFilePath, 'template');
+      const targetPath = process.cwd();
+      fse.ensureDirSync(templatePath);
+      fse.ensureDirSync(targetPath);
+      fse.copySync(templatePath, targetPath);
+    } catch (error) {
+      throw new Error(error);
+    } finally {
+      spinner.stop(true);
+      log.success('模板按照成功');
+    }
+  }
+
+  async installCustomTemplate() {
+    console.log('install custom');
+  }
+
+  async installTemplate() {
+    if (this.templateInfo) {
+      if (!this.templateInfo.type) {
+        this.templateInfo.type = TEMPLATE_TYPE_NORMAL;
+      }
+      if (this.templateInfo.type === TEMPLATE_TYPE_NORMAL) {
+        await this.installNormalTemplate();
+      } else if (this.templateInfo.type === TEMPLATE_TYPE_CUSTOM) {
+        await this.installCustomTemplate();
+      } else {
+        throw new Error('无法识别项目模板类型！');
+      }
+    } else {
+      throw new Error('项目模板信息不存在');
+    }
+  }
+
   async exec() {
     try {
-      const res = await this.prepare();
-      log.verbose(res);
-      this.downloadTemplate();
+      const projectInfo = await this.prepare();
+      if (projectInfo) {
+        this.projectInfo = projectInfo;
+        log.verbose(projectInfo);
+        // 下载模版
+        await this.downloadTemplate();
+        // 安装模版
+        await this.installTemplate();
+      }
     } catch (error) {
       log.error(error.message);
     }

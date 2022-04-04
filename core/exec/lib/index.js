@@ -33,7 +33,7 @@ async function exec(...argv) {
 
   if (!targetPath) {
     targetPath = path.resolve(homePath, CACHE_DIR);
-    storePath = path.resolve(homePath, 'node_modules');
+    storePath = path.resolve(targetPath, 'node_modules');
 
     pkg = new Package({
       targetPath,

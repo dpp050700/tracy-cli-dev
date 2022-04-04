@@ -88,7 +88,7 @@ class Package {
 
   // 获取入口文件
   getRootFilePath() {
-    function _getRootFile(targetPath) {
+    function getRootFile(targetPath) {
       // 获取 package.json 所在目录 pkg-dir
       const dir = pkgDir(targetPath);
       if (dir) {
@@ -105,9 +105,9 @@ class Package {
     }
 
     if (this.storePath) {
-      return _getRootFile(this.cacheFilePath);
+      return getRootFile(this.cacheFilePath);
     }
-    return _getRootFile(this.targetPath);
+    return getRootFile(this.targetPath);
   }
 }
 
