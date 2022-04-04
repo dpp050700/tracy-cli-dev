@@ -1,22 +1,14 @@
 const path = require('path');
-const childProcess = require('child_process');
 
 const Package = require('@tracy-cli-dev/package');
 const log = require('@tracy-cli-dev/log');
+const { exec: spawn } = require('@tracy-cli-dev/utils');
 
 const SETTINGS = {
   init: '@tracy-cli-dev/init',
 };
 
 const CACHE_DIR = 'dependencies';
-
-function spawn(command, args, options) {
-  const win32 = process.platform === 'win32';
-  const cmd = win32 ? 'cmd' : command;
-  const cmdArgs = win32 ? ['/c'].concat(command, args) : args;
-
-  return childProcess.spawn(cmd, cmdArgs, options || []);
-}
 
 async function exec(...argv) {
   let targetPath = process.env.CLI_TARGET_PATH;

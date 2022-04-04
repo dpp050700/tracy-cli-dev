@@ -4,11 +4,14 @@ const inquirer = require('inquirer');
 const fse = require('fs-extra');
 const semver = require('semver');
 const userHome = require('user-home');
+const kebabCase = require('kebab-case');
+const ejs = require('ejs');
+const glob = require('glob');
 
 const log = require('@tracy-cli-dev/log');
 const Command = require('@tracy-cli-dev/command');
 const Package = require('@tracy-cli-dev/package');
-const { spinnerStart } = require('@tracy-cli-dev/utils');
+const { spinnerStart, execAsync } = require('@tracy-cli-dev/utils');
 
 const getProjectTemplate = require('./getProjectTemplate');
 
@@ -17,6 +20,8 @@ const TYPE_COMPONENT = 'component';
 
 const TEMPLATE_TYPE_NORMAL = 'normal';
 const TEMPLATE_TYPE_CUSTOM = 'custom';
+
+const WHITE_CMD = ['npm', 'cnpm', 'yarn'];
 class InitCommand extends Command {
   init() {
     this.projectName = this.argv[0];
@@ -42,7 +47,9 @@ class InitCommand extends Command {
   }
 
   async getProjectInfo() {
-    let projectInfo = {};
+    let projectInfo = {
+      projectName: this.projectName,
+    };
 
     function validProjectName(v) {
       return /^[a-zA-Z]+([-][a-zA-Z][a-zA-Z0-9]*|[_][a-zA-Z][a-zA-Z0-9]*|[a-zA-Z0-9])*$/.test(v);
@@ -60,24 +67,25 @@ class InitCommand extends Command {
     });
     log.verbose(type);
     if (type === TYPE_PROJECT) {
+      const projectNamePrompt = validProjectName(this.projectName) ? [] : [{
+        type: 'input',
+        name: 'projectName',
+        message: '请输入项目的名称',
+        default: '',
+        validate(v) {
+          const done = this.async();
+          setTimeout(() => {
+            if (!validProjectName(v)) {
+              done('项目名称格式不正确');
+              return;
+            }
+            done(null, true);
+          }, 0);
+        },
+      }];
       const project = await inquirer.prompt(
         [
-          {
-            type: 'input',
-            name: 'projectName',
-            message: '请输入项目的名称',
-            default: '',
-            validate(v) {
-              const done = this.async();
-              setTimeout(() => {
-                if (!validProjectName(v)) {
-                  done('项目名称格式不正确');
-                  return;
-                }
-                done(null, true);
-              }, 0);
-            },
-          },
+          ...projectNamePrompt,
           {
             type: 'input',
             name: 'projectVersion',
@@ -108,10 +116,15 @@ class InitCommand extends Command {
           },
         ],
       );
-      projectInfo = { type, ...project };
+      projectInfo = { ...projectInfo, type, ...project };
     } else {
       projectInfo = {};
     }
+    // 生成 classname
+    if (projectInfo.projectName) {
+      projectInfo.className = kebabCase(projectInfo.projectName).replace(/^-/, '');
+    }
+    console.log(projectInfo);
     return projectInfo;
   }
 
@@ -130,6 +143,7 @@ class InitCommand extends Command {
     });
     if (!await templateNpm.exits()) {
       const spinner = spinnerStart('正在下载模板...');
+
       try {
         await templateNpm.install();
       } catch (error) {
@@ -199,6 +213,47 @@ class InitCommand extends Command {
     return this.getProjectInfo();
   }
 
+  checkCommand(command) {
+    const [cmd, ...args] = command.split(' ');
+    if (WHITE_CMD.includes(cmd)) {
+      return [cmd, ...args];
+    }
+    throw new Error(`${command} 非法的命令`);
+  }
+
+  async ejsRender({ ignore }) {
+    console.log(this.projectInfo);
+    return new Promise((resolve, reject) => {
+      glob('**', {
+        cwd: process.cwd(),
+        ignore,
+        nodir: true,
+      }, (error, files) => {
+        if (error) {
+          reject(error);
+        }
+        Promise.all(files.map((file) => {
+          const filePath = path.join(process.cwd(), file);
+          return new Promise((res, rej) => {
+            ejs.renderFile(filePath, {
+              className: this.projectInfo.className,
+              version: this.projectInfo.projectVersion,
+            }, {}, (err, result) => {
+              if (err) {
+                rej(err);
+              } else {
+                fse.writeFileSync(filePath, result);
+                res(result);
+              }
+            });
+          });
+        })).then(() => {
+          resolve();
+        });
+      });
+    });
+  }
+
   async installNormalTemplate() {
     const spinner = spinnerStart('正在安装模板...');
     try {
@@ -211,7 +266,32 @@ class InitCommand extends Command {
       throw new Error(error);
     } finally {
       spinner.stop(true);
-      log.success('模板按照成功');
+      log.success('模板安装成功');
+    }
+    const ignore = ['node_modules/**', 'public/**'];
+    await this.ejsRender({ ignore });
+    // 依赖安装
+    const { installCommand, startCommand } = this.templateInfo;
+    if (installCommand) {
+      const [cmd, ...args] = this.checkCommand(installCommand);
+      const installRes = await execAsync(cmd, args, {
+        stdio: 'inherit',
+        cwd: process.cwd(),
+      });
+      if (installRes !== 0) {
+        throw new Error('依赖安装失败！');
+      }
+    }
+
+    if (startCommand) {
+      const [cmd, ...args] = this.checkCommand(startCommand);
+      const startRes = await execAsync(cmd, args, {
+        stdio: 'inherit',
+        cwd: process.cwd(),
+      });
+      if (startRes !== 0) {
+        throw new Error('项目启动失败！');
+      }
     }
   }
 
@@ -249,6 +329,9 @@ class InitCommand extends Command {
       }
     } catch (error) {
       log.error(error.message);
+      // if (process.env.LOG_LEVEL === 'verbose') {
+      //   console.log(error);
+      // }
     }
   }
 }

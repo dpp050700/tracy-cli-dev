@@ -57,8 +57,8 @@ class Package {
   }
 
   // 安装
-  install() {
-    npminstall({
+  async install() {
+    await npminstall({
       root: this.targetPath,
       storeDir: this.storePath,
       registry: getDefaultRegistry(),
@@ -82,6 +82,8 @@ class Package {
           { name: this.packageName, version: latestPackageVersion },
         ],
       });
+      this.packageVersion = latestPackageVersion;
+    } else {
       this.packageVersion = latestPackageVersion;
     }
   }
